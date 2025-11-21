@@ -1,0 +1,5 @@
+.env
+*.db
+*.sqbpro
+sources.json
+downloaded_files/
