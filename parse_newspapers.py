@@ -88,6 +88,13 @@ class NewsArticleScraper:
                 description = article.query_selector(media["el_desc"]).text
             except:
                 description = ""
+
+            # Removes everything coming after a ? in the URL
+            # Prevents duplicates especially for Le Monde
+            article_url = article_url.split('?', 1)[-1]
+
+            if not article_url.startswith("http"):
+                article_url = media["base_url"] + article_url
             
             if article_url and title:
                 articles.append({
