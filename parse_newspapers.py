@@ -24,40 +24,11 @@ class NewsArticleScraper:
         ''')
         conn.commit()
         conn.close()
-        
-    def accept_cookies(self, sb):
-        """Try common cookie acceptance patterns"""
-        cookie_selectors = [
-            "button:contains('Accept')",
-            "button:contains('Accetto')",
-            "button:contains('Souhlasím')",
-            "button:contains('Prihvaćam')",
-            "button:contains('Agree')",
-            "button:contains('Consent')",
-            "#didomi-notice-agree-button",
-            "button[class*='accept']",
-            "button[class*='consent']",
-            "a:contains('Souhlasím')",
-        ]
-        
-        for selector in cookie_selectors:
-            try:
-                if sb.is_element_visible(selector, timeout=5):
-                    sb.click(selector)
-                    print("✓ Cookies accepted")
-                    time.sleep(1)
-                    return True
-            except Exception:
-                continue
-        
-        print("⚠ No cookie banner found or already accepted")
-        return False
 
     def scrape(self, sb, media):
         print(f"\n📰 Scraping {media["name"]}...")
         sb.open(media["url"])
         time.sleep(2)
-        self.accept_cookies(sb)
         
         articles = []
         # Wait for articles to load
@@ -91,7 +62,7 @@ class NewsArticleScraper:
 
             # Removes everything coming after a ? in the URL
             # Prevents duplicates especially for Le Monde
-            article_url = article_url.split('?', 1)[-1]
+            article_url = article_url.split('?', 1)[0]
 
             if not article_url.startswith("http"):
                 article_url = media["base_url"] + article_url
