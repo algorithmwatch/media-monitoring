@@ -4,6 +4,10 @@ This program browses select news sources for articles about AI in all European c
 
 ## How to use
 
+	make run
+
+Runs all commands.
+
 	python3 parse_newspapers.py
 
 Scrapes articles about AI in many newspapers.
