@@ -115,13 +115,14 @@ class NewsArticleScraper:
             all_articles = []
             
             for media in news_sources: 
-                try:
-                    articles = self.scrape(sb, media)
-                except Exception:
-                    print(f"Could not scrape {media["name"]}")
-                    continue
-                all_articles.extend(articles)
-                time.sleep(2)
+                if media["active"]:
+                    try:
+                        articles = self.scrape(sb, media)
+                    except Exception:
+                        print(f"Could not scrape {media["name"]}")
+                        continue
+                    all_articles.extend(articles)
+                    time.sleep(2)
 
 # Example usage
 if __name__ == "__main__":
