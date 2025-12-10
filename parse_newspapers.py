@@ -19,6 +19,8 @@ class NewsArticleScraper:
                 url TEXT NOT NULL UNIQUE,
                 title TEXT,
                 description TEXT,
+                relevant BIT DEFAULT NULL,
+                comment TEXT,
                 scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
