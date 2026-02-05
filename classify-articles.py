@@ -1,46 +1,43 @@
 import sqlite3
 import os
-from openai import OpenAI
+from ollama import chat
+from ollama import ChatResponse
 from dotenv import load_dotenv, dotenv_values 
 import json
 
 load_dotenv() 
 
 DB_PATH = "news_articles.db"
-MODEL = "gpt-5-nano"
 
-
-# ------------------------------------------------
-# Initialize OpenAI client
-# ------------------------------------------------
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-
-# ------------------------------------------------
-# Ask ChatGPT for classification
-# ------------------------------------------------
 def analyze_article(title, description):
     instructions = "You are an AI content classifier. Your job is to return a JSON object."
     prompt = f"""
+You are an AI content classifier. Your job is to return a JSON object.
 
 For the article below, determine:
 
-1. Whether it fits ANY of these topics
-- Use of automated systems or AI in the sectors of education, provision of healthcare (NOT medical research).
+1. Whether it mentions ANY of these topics
+- Concrete use of AI in the sectors of education or healthcare provision.
 - Impact of social media algorithms.
 - Use of automated management tools, for instance to control workers, employees or delivery workers.
-- Construction of data centers, especially the conflicts related thereto.
+- Resistance against data centers.
 - Reported biases in algorithms or AI systems.
 - Actual, verified use of AI by armed forces.
 - Use of automated systems in the government or in the justice sector.
 - Personal testimonies of persons who were adversely affected by automated or AI systems.
+
+If an article mentions these topics, relevance is high, up to 100 if several topics are mentioned.
+
+If the article is a commentary or does not bring new information, relevance is set to 0.
+
+If the article is about an industry not listed above, relevance is set to 0.
 
 2. Write a concise explanation of exactly 150 characters.
 
 Return ONLY a JSON object with this structure:
 
 {{
-  "relevant": "YES" or "NO",
+  "relevance": A number between 0 and 100,
   "comment": "150-character explanation in English"
 }}
 
@@ -50,19 +47,20 @@ Description: {description}
 
 """
 
-    response = client.responses.create(
-        model=MODEL,
-        input=prompt,
-        instructions=instructions
-    )
+    response: ChatResponse = chat(model='gemma3', messages=[
+      {
+        'role': 'user',
+        'content': prompt,
+      },
+    ])
 
-    answer = response.output_text.strip()
+    answer = response.message.content.strip().replace("```json", "").replace("```", "")
 
     try:
         data = json.loads(answer)
     except json.JSONDecodeError:
         # fallback if model misbehaves
-        data = {"relevant": "NO", "comment": ""}
+        data = {"relevance": "0", "comment": ""}
 
     return data
 
@@ -76,7 +74,7 @@ def classify_articles():
     cur.execute("""
         SELECT id, title, description
         FROM articles
-        WHERE relevant IS NULL
+        WHERE relevance IS NULL
     """)
 
     rows = cur.fetchall()
@@ -87,16 +85,16 @@ def classify_articles():
 
         result = analyze_article(title, description)
 
-        relevant = 1 if result.get("relevant", "").upper() == "YES" else 0
+        relevance = int(result.get("relevance", ""))
         comment = result.get("comment", "")
 
         cur.execute(
-            "UPDATE articles SET relevant = ?, comment = ? WHERE id = ?",
-            (relevant, comment, article_id)
+            "UPDATE articles SET relevance = ?, comment = ? WHERE id = ?",
+            (relevance, comment, article_id)
         )
         conn.commit()
 
-        print(f" -> relevant = {bool(relevant)}")
+        print(f" -> relevance = {relevance}")
         if comment:
             print(f" -> comment: {comment}")
 
@@ -108,6 +106,4 @@ def classify_articles():
 # Entry point
 # ------------------------------------------------
 if __name__ == "__main__":
-    if not os.getenv("OPENAI_API_KEY"):
-        raise EnvironmentError("OPENAI_API_KEY environment variable is not set.")
     classify_articles()

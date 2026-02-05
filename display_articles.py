@@ -6,13 +6,11 @@ def fetch_latest_relevant_articles(db_path="news_articles.db"):
     cursor = conn.cursor()
 
     query = """
-        SELECT q.* FROM (
-        SELECT source, url, comment, scraped_at
+        SELECT source, url, comment, relevance
         FROM articles
-        WHERE relevant = 1
-        ORDER BY scraped_at DESC
-        LIMIT 50) q
-        ORDER BY q.scraped_at ASC
+        WHERE DATE(scraped_at) = CURRENT_DATE
+        AND relevance IS NOT NULL
+        ORDER BY relevance ASC
     """
 
     cursor.execute(query)
@@ -29,4 +27,5 @@ if __name__ == "__main__":
         print(f"Source:  {article['source']}")
         print(f"URL:     {article['url']}")
         print(f"Comment: {article['comment']}")
+        print(f"Relevance: {article['relevance']}")
         print("-" * 80)

@@ -31,27 +31,31 @@ class NewsArticleScraper:
         print(f"\n📰 Scraping {media["name"]}...")
         sb.open(media["url"])
         time.sleep(2)
-        
+
         articles = []
         # Wait for articles to load
         sb.wait_for_element(media["el_to_wait_for"], timeout=10)
-        
+
         # Use sb.find_elements directly (not on elem)
         article_elements = sb.find_elements(media["el_article"])
-        
+
         if not article_elements:
             print("  No articles found")
             return articles
         
         for article in article_elements:
 
-            link_elem = article.query_selector(media["el_link"])
+            if media["el_link"]:
+                link_elem = article.query_selector(media["el_link"])
 
-            try:
-                article_url = link_elem.get_attribute('href')
-            except:
-                article_url = ""
-            
+                try:
+                    article_url = link_elem.get_attribute('href')
+                except:
+                    article_url = ""
+
+            else: # Special case for DN where each article item is actually an a elem
+                article_url = article.get_attribute('href')
+
             try:
                 title = article.query_selector(media["el_title"]).text
             except:
