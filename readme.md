@@ -14,15 +14,12 @@ Scrapes articles about AI in many newspapers.
 
 	python3 classify-articles.py
 
-Classifies articles using gpt5-nano and finds relevant ones.
+Classifies articles using gemma3 and finds relevant ones.
 
-	python3 display_articles.py
+	python3 cluster.py
+
+Clusters articles to group duplicates
+
+	python3 display_articles_html.py
 
 Shows latest relevant articles.
-
-## Todo
-
-- Headless scraping.
-- Remove old entries from DB.
-- Allow for locally classifying articles.
-- Build smaller classifyer based on data in DB.
