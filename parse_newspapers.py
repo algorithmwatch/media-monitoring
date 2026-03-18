@@ -3,6 +3,12 @@ import time, json
 from seleniumbase import SB
 from datetime import datetime
 
+verbose = False
+
+def verbose_print(text):
+    if verbose:
+        print(text)
+
 class NewsArticleScraper:
     def __init__(self, db_name='articles.db'):
         self.db_name = db_name
@@ -28,7 +34,7 @@ class NewsArticleScraper:
         conn.close()
 
     def scrape(self, sb, media):
-        print(f"\n📰 Scraping {media["name"]}...")
+        verbose_print(f"\n📰 Scraping {media["name"]}...")
         sb.open(media["url"])
         time.sleep(2)
 
@@ -40,7 +46,7 @@ class NewsArticleScraper:
         article_elements = sb.find_elements(media["el_article"])
 
         if not article_elements:
-            print("  No articles found")
+            verbose_print("  No articles found")
             return articles
         
         for article in article_elements:
@@ -81,13 +87,13 @@ class NewsArticleScraper:
                     'description': description
                 })
                         
-        print(f"  Found {len(articles)} articles")
+        verbose_print(f"  Found {len(articles)} articles")
 
-        self.save_to_database(articles)
+        self.save_to_database(articles, media)
 
         return articles
     
-    def save_to_database(self, articles):
+    def save_to_database(self, articles, media):
         """Save articles to SQLite database"""
         conn = sqlite3.connect(self.db_name)
         cursor = conn.cursor()
@@ -98,9 +104,9 @@ class NewsArticleScraper:
         for article in articles:
             try:
                 cursor.execute('''
-                    INSERT INTO articles (source, url, title, description)
-                    VALUES (?, ?, ?, ?)
-                ''', (article['source'], article['url'], article['title'], article['description']))
+                    INSERT INTO articles (source, url, title, description, lang, country)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (article['source'], article['url'], article['title'], article['description'], media["lang"], media["country"]))
                 added += 1
             except sqlite3.IntegrityError:
                 skipped += 1
@@ -108,7 +114,7 @@ class NewsArticleScraper:
         conn.commit()
         conn.close()
         
-        print(f"\n💾 Database: {added} added, {skipped} skipped (duplicates)")
+        verbose_print(f"\n💾 Database: {added} added, {skipped} skipped (duplicates)")
         
     def scrape_all(self):
         """Scrape all configured news sources"""
@@ -140,10 +146,10 @@ if __name__ == "__main__":
     cursor = conn.cursor()
     cursor.execute("SELECT COUNT(*) FROM articles")
     count = cursor.fetchone()[0]
-    print(f"\n📊 Total articles in database: {count}")
+    verbose_print(f"\n📊 Total articles in database: {count}")
     
     cursor.execute("SELECT source, COUNT(*) FROM articles GROUP BY source")
     for source, cnt in cursor.fetchall():
-        print(f"  {source}: {cnt} articles")
+        verbose_print(f"  {source}: {cnt} articles")
     
     conn.close()
