@@ -85,6 +85,7 @@ def classify_articles():
         SELECT id, title, description, lang
         FROM articles
         WHERE relevance IS NULL
+        AND DATE(scraped_at) = CURRENT_DATE
     """)
 
     rows = cur.fetchall()

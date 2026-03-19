@@ -54,10 +54,8 @@ def relevance_to_color(relevance):
 @app.route("/")
 def index():
     db = get_db()
-    cutoff = (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d %H:%M:%S")
     rows = db.execute(
-        "SELECT * FROM articles WHERE scraped_at >= ? ORDER BY scraped_at DESC",
-        (cutoff,)
+        "SELECT * FROM articles WHERE DATE(scraped_at) = CURRENT_DATE ORDER BY scraped_at DESC"
     ).fetchall()
 
     # Group by cluster_id — keep highest relevance as primary

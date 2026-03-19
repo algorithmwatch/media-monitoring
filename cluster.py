@@ -2,6 +2,7 @@ import sqlite3
 from datetime import date
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import DBSCAN
+from sentence_transformers import SentenceTransformer
 import numpy as np
 
 # --- CONFIG ---
@@ -41,22 +42,13 @@ def main():
         row_ids.append(row_id)
         texts.append(combined_text)
 
-    # --- Vectorize text ---
-    vectorizer = TfidfVectorizer(
-        stop_words='english',
-        max_df=0.8,
-        min_df=1
-    )
-    X = vectorizer.fit_transform(texts)
+    # 1. Embeddings
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    embeddings = model.encode(texts, normalize_embeddings=True)
 
-    # --- Run DBSCAN clustering ---
-    clustering = DBSCAN(
-        eps=EPS,
-        min_samples=MIN_SAMPLES,
-        metric='cosine'
-    )
-
-    labels = clustering.fit_predict(X)
+    # 2. Clustering
+    clustering = DBSCAN(eps=0.3, min_samples=2, metric='cosine')
+    labels = clustering.fit_predict(embeddings)
 
     # --- Update DB with cluster IDs ---
     for row_id, cluster_id in zip(row_ids, labels):
